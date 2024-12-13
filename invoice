@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Receipt Generator</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .form-container {
+            width: 50%;
+            padding: 20px;
+            background: #f4f4f4;
+            box-shadow: inset -1px 0px 5px rgba(0,0,0,0.1);
+        }
+
+        .receipt-container {
+            width: 50%;
+            padding: 20px;
+        }
+
+        input, select, button {
+            margin: 10px 0;
+            padding: 10px;
+            width: calc(100% - 22px);
+            box-sizing: border-box;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .print-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .print-btn:hover {
+            background-color: #0056b3;
+        }
+
+        @media print {
+            .form-container, .print-btn {
+                display: none;
+            }
+            .receipt-container {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Receipt Input</h2>
+        <label for="name">Name:</label>
+        <input type="text" id="name" placeholder="Customer Name">
+
+        <label for="phone">Phone:</label>
+        <input type="text" id="phone" placeholder="Phone Number">
+
+        <label for="address">Address:</label>
+        <input type="text" id="address" placeholder="Customer Address">
+
+        <label for="description">Item Description:</label>
+        <input type="text" id="description" placeholder="Description">
+
+        <label for="quantity">Quantity:</label>
+        <input type="number" id="quantity" placeholder="Quantity">
+
+        <label for="price">Price:</label>
+        <input type="number" id="price" placeholder="Price">
+
+        <label for="advanced-payment">Advanced Payment:</label>
+        <input type="number" id="advanced-payment" placeholder="Advanced Payment">
+
+        <label for="delivery-charge">Delivery Charge:</label>
+        <input type="number" id="delivery-charge" placeholder="Delivery Charge">
+
+        <button onclick="addItem()">Add Item</button>
+        <button onclick="removeLastItem()">Remove Last Item</button>
+    </div>
+
+    <div class="receipt-container">
+    <div id="receipt">
+        <header>
+            <img src="https://tawsiftorabi.github.io/TinkerDen/logo.png" alt="TinkerDen Logo" style="max-width: 100px; display: block; margin: 0 auto;">
+            <h2>TinkerDen</h2>
+            <p>Mirpur - 1, Dhaka</p>
+            <p>Email: tinkerdenbd@gmail.com</p>
+            <p>Phone (Management): +880 186 6718 971</p>
+            <p>Phone (Customer Service): +880 186 2930 437</p>
+        </header>
+
+        <hr>
+
+        <div>
+            <p><strong>Date:</strong> <span id="date">--</span></p>
+            <p><strong>Receipt Number:</strong> <span id="receipt-number">--</span></p>
+            <p><strong>Name:</strong> <span id="customer-name">--</span></p>
+            <p><strong>Phone:</strong> <span id="customer-phone">--</span></p>
+            <p><strong>Address:</strong> <span id="customer-address">--</span></p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="items">
+            </tbody>
+        </table>
+
+        <div>
+            <p><strong>Total:</strong> <span id="total">0.00 TK</span></p>
+            <p><strong>Delivery Charge:</strong> <span id="delivery-charge-display">0.00 TK</span></p>
+            <p><strong>Advanced Payment:</strong> <span id="advanced-payment-display">0.00 TK</span></p>
+            <p><strong>Due (Cash on Delivery):</strong> <span id="due">0.00 TK</span></p>
+        </div>
+
+        <footer>
+            <p>Thank you for your purchase! Please leave a review on our Facebook page.</p>
+        </footer>
+
+        <button class="print-btn" onclick="window.print()">Print Receipt</button>
+    </div>
+</div>
+
+    <script>
+        let items = [];
+
+        function addItem() {
+            const description = document.getElementById('description').value;
+            const quantity = parseInt(document.getElementById('quantity').value) || 0;
+            const price = parseFloat(document.getElementById('price').value) || 0;
+            const deliveryCharge = parseFloat(document.getElementById('delivery-charge').value) || 0;
+            const advancedPayment = parseFloat(document.getElementById('advanced-payment').value) || 0;
+
+            if (description && quantity > 0 && price > 0) {
+                items.push({ description, quantity, price });
+                updateReceipt(deliveryCharge, advancedPayment);
+                document.getElementById('description').value = '';
+                document.getElementById('quantity').value = '';
+                document.getElementById('price').value = '';
+            }
+        }
+
+        function removeLastItem() {
+            if (items.length > 0) {
+                items.pop();
+                const deliveryCharge = parseFloat(document.getElementById('delivery-charge').value) || 0;
+                const advancedPayment = parseFloat(document.getElementById('advanced-payment').value) || 0;
+                updateReceipt(deliveryCharge, advancedPayment);
+            }
+        }
+
+        function updateReceipt(deliveryCharge, advancedPayment) {
+            const tbody = document.getElementById('items');
+            tbody.innerHTML = '';
+            let total = 0;
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.description}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.price.toFixed(2)} TK</td>
+                    <td>${(item.quantity * item.price).toFixed(2)} TK</td>
+                `;
+                tbody.appendChild(row);
+                total += item.quantity * item.price;
+            });
+
+            const due = total + deliveryCharge - advancedPayment;
+
+            document.getElementById('total').innerText = `${total.toFixed(2)} TK`;
+            document.getElementById('delivery-charge-display').innerText = `${deliveryCharge.toFixed(2)} TK`;
+            document.getElementById('advanced-payment-display').innerText = `${advancedPayment.toFixed(2)} TK`;
+            document.getElementById('due').innerText = `${due.toFixed(2)} TK`;
+
+            document.getElementById('customer-name').innerText = document.getElementById('name').value || '--';
+            document.getElementById('customer-phone').innerText = document.getElementById('phone').value || '--';
+            document.getElementById('customer-address').innerText = document.getElementById('address').value || '--';
+            document.getElementById('date').innerText = new Date().toLocaleDateString();
+            document.getElementById('receipt-number').innerText = `TKDEN-${new Date().toLocaleDateString().replace(/\//g, '')}-01`;
+        }
+    </script>
+</body>
+</html>
